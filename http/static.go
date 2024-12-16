@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log"
@@ -84,7 +85,7 @@ func handleWithStaticData(w http.ResponseWriter, _ *http.Request, d *data, fSys 
 
 	fileContents, err := fs.ReadFile(fSys, file)
 	if err != nil {
-		if err == os.ErrNotExist {
+		if errors.Is(err, os.ErrNotExist) {
 			return http.StatusNotFound, err
 		}
 		return http.StatusInternalServerError, err
@@ -110,6 +111,10 @@ func getStaticHandlers(store *storage.Storage, server *settings.Server, assetsFs
 
 	static = handle(func(w http.ResponseWriter, r *http.Request, d *data) (int, error) {
 		if r.Method != http.MethodGet {
+			return http.StatusNotFound, nil
+		}
+
+		if strings.HasSuffix(r.URL.Path, "/") {
 			return http.StatusNotFound, nil
 		}
 
